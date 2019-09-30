@@ -1,31 +1,59 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
+import { Observable, interval, Subscription } from 'rxjs';
+import { take, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   template: `
-    <!--The content below is only a placeholder and can be replaced.-->
-    <div style="text-align:center">
-      <h1>
-        Welcome to {{title}}!
-      </h1>
-      <img width="300" alt="Angular Logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg==">
+    <div class="card card-block">
+      <h4 class="card-title">AsyncPipe</h4>
+
+      <p class="card-text" ngNonBindable>{{ promise | async }}</p>
+      <p class="card-text">{{ promise | async }}</p>
+
+      <p class="card-text" ngNonBindable>{{ observable$ | async }}</p>
+      <p class="card-text">{{ observable$ | async }}</p>
+
+      <p class="card-text" ngNonBindable>{{ observableData }}</p>
+      <p class="card-text">{{ observableData }}</p>
     </div>
-    <h2>Here are some links to help you start: </h2>
-    <ul>
-      <li>
-        <h2><a target="_blank" rel="noopener" href="https://angular.io/tutorial">Tour of Heroes</a></h2>
-      </li>
-      <li>
-        <h2><a target="_blank" rel="noopener" href="https://angular.io/cli">CLI Documentation</a></h2>
-      </li>
-      <li>
-        <h2><a target="_blank" rel="noopener" href="https://blog.angular.io/">Angular blog</a></h2>
-      </li>
-    </ul>
-    
   `,
   styles: []
 })
-export class AppComponent {
-  title = 'AsyncPipe';
+export class AppComponent implements OnDestroy {
+  promise: Promise<{}>;
+  observable$: Observable<number>;
+  subscription: Subscription = null;
+  observableData: number;
+
+  constructor() {
+    this.promise = this.getPromise();
+    this.observable$ = this.getObservable();
+    this.subscribeObservable();
+  }
+  getObservable() {
+    return interval(1000).pipe(
+      take(11),
+      map(v => v * v)
+    );
+  }
+  // AsyncPipe subscribes to the observable automatically
+  subscribeObservable() {
+    this.subscription = this.getObservable().subscribe(
+      v => (this.observableData = v)
+    );
+  }
+
+  getPromise() {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => resolve('Promise complete!'), 1000);
+    });
+  }
+
+  // AsyncPipe unsubscribes from the observable automatically
+  ngOnDestroy() {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  }
 }
